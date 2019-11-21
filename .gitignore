@@ -1,0 +1,5 @@
+.version-defs
+bin/**/*
+go/**/*
+.idea/
+_output/
