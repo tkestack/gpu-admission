@@ -4,8 +4,7 @@ It is a [scheduler extender](https://github.com/kubernetes/community/blob/master
 It provides the following features:
 
 - provides quota limitation according to GPU device type
-- avoids fragment allocation of node by working with [gpu-manager](https://github.com
-/tkestack/gpu-manager)
+- avoids fragment allocation of node by working with [gpu-manager](https://github.com/tkestack/gpu-manager)
 
 > For more details, please refer to the documents in `docs` directory in this project
 
