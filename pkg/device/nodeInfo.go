@@ -19,10 +19,10 @@ package device
 import (
 	"sort"
 
-	"tkestack.io/gpu-admission/pkg/util"
-
-	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
+	"k8s.io/klog"
+
+	"tkestack.io/gpu-admission/pkg/util"
 )
 
 type NodeInfo struct {
@@ -36,7 +36,7 @@ type NodeInfo struct {
 }
 
 func NewNodeInfo(node *v1.Node, pods []*v1.Pod) *NodeInfo {
-	glog.V(4).Infof("debug: NewNodeInfo() creates nodeInfo for %s", node.Name)
+	klog.V(4).Infof("debug: NewNodeInfo() creates nodeInfo for %s", node.Name)
 
 	devMap := map[int]*DeviceInfo{}
 	nodeTotalMemory := uint(util.GetCapacityOfNode(node, util.VMemoryAnnotation))
@@ -65,7 +65,7 @@ func NewNodeInfo(node *v1.Node, pods []*v1.Pod) *NodeInfo {
 			for _, index := range predicateIndexes {
 				var vcore, vmemory uint
 				if index >= deviceCount {
-					glog.Infof("invalid predicateIndex %d larger than device count", index)
+					klog.Infof("invalid predicateIndex %d larger than device count", index)
 					continue
 				}
 				vcore = util.GetGPUResourceOfContainer(&c, util.VCoreAnnotation)
@@ -77,7 +77,7 @@ func NewNodeInfo(node *v1.Node, pods []*v1.Pod) *NodeInfo {
 				}
 				err = ret.AddUsedResources(index, vcore, vmemory)
 				if err != nil {
-					glog.Infof("failed to update used resource for node %s dev %d due to %v",
+					klog.Infof("failed to update used resource for node %s dev %d due to %v",
 						node.Name, index, err)
 				}
 			}
@@ -92,7 +92,7 @@ func NewNodeInfo(node *v1.Node, pods []*v1.Pod) *NodeInfo {
 func (n *NodeInfo) AddUsedResources(devID int, vcore uint, vmemory uint) error {
 	err := n.devs[devID].AddUsedResources(vcore, vmemory)
 	if err != nil {
-		glog.Infof("failed to update used resource for node %s dev %d due to %v", n.name, devID, err)
+		klog.Infof("failed to update used resource for node %s dev %d due to %v", n.name, devID, err)
 		return err
 	}
 	n.usedCore += vcore

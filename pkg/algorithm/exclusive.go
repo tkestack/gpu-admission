@@ -19,10 +19,10 @@ package algorithm
 import (
 	"sort"
 
+	"k8s.io/klog"
+
 	"tkestack.io/gpu-admission/pkg/device"
 	"tkestack.io/gpu-admission/pkg/util"
-
-	"github.com/golang/glog"
 )
 
 type exclusiveMode struct {
@@ -73,9 +73,9 @@ func (al *exclusiveMode) Evaluate(cores uint, _ uint) []*device.DeviceInfo {
 		return nil
 	}
 
-	if glog.V(2) {
+	if klog.V(2) {
 		for _, dev := range devs {
-			glog.V(4).Infof("Pick up %d , cores: %d, memory: %d",
+			klog.V(4).Infof("Pick up %d , cores: %d, memory: %d",
 				dev.GetID(), dev.AllocatableCores(), dev.AllocatableMemory())
 		}
 	}

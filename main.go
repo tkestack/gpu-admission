@@ -21,34 +21,39 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"strings"
 
+	"github.com/julienschmidt/httprouter"
+	"github.com/spf13/pflag"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/component-base/logs"
+	"k8s.io/klog"
 
 	"tkestack.io/gpu-admission/pkg/predicate"
 	"tkestack.io/gpu-admission/pkg/prioritize"
 	"tkestack.io/gpu-admission/pkg/route"
 	"tkestack.io/gpu-admission/pkg/version/verflag"
-
-	"github.com/golang/glog"
-	"github.com/julienschmidt/httprouter"
-	"github.com/spf13/pflag"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/component-base/logs"
-	"k8s.io/klog"
 )
 
 var (
-	kubeconfig             string
-	masterURL              string
-	configFile             string
-	listenAddress          string
-	profileAddress         string
-	inClusterMode          bool
+	kubeconfig     string
+	masterURL      string
+	configFile     string
+	listenAddress  string
+	profileAddress string
+	inClusterMode  bool
 )
 
 func main() {
+	addFlags(pflag.CommandLine)
+
+	logs.InitLogs()
+	defer logs.FlushLogs()
+	initFlags()
 	flag.CommandLine.Parse([]string{})
+	verflag.PrintAndExitIfRequested()
 
 	router := httprouter.New()
 	route.AddVersion(router)
@@ -65,17 +70,17 @@ func main() {
 	}
 
 	if err != nil {
-		glog.Fatalf("Error building kubeconfig: %s", err.Error())
+		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(clientCfg)
 	if err != nil {
-		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
+		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
 	gpuFilter, err := predicate.NewGPUFilter(configFile, kubeClient)
 	if err != nil {
-		glog.Fatalf("Failed to new gpu quota filter: %s", err.Error())
+		klog.Fatalf("Failed to new gpu quota filter: %s", err.Error())
 	}
 	route.AddPredicate(router, gpuFilter)
 
@@ -85,20 +90,10 @@ func main() {
 		log.Println(http.ListenAndServe(profileAddress, nil))
 	}()
 
-	glog.Infof("Server starting on %s", listenAddress)
+	klog.Infof("Server starting on %s", listenAddress)
 	if err := http.ListenAndServe(listenAddress, router); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func init() {
-	addFlags(pflag.CommandLine)
-
-	klog.InitFlags(nil)
-	logs.InitLogs()
-	defer logs.FlushLogs()
-
-	verflag.PrintAndExitIfRequested()
 }
 
 func addFlags(fs *pflag.FlagSet) {
@@ -111,4 +106,26 @@ func addFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&profileAddress, "pprofAddress", "127.0.0.1:3457", "The address for debug")
 	fs.BoolVar(&inClusterMode, "incluster-mode", false,
 		"Tell controller kubeconfig is built from in cluster")
+}
+
+func wordSepNormalizeFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {
+	if strings.Contains(name, "_") {
+		return pflag.NormalizedName(strings.Replace(name, "_", "-", -1))
+	}
+	return pflag.NormalizedName(name)
+}
+
+// InitFlags normalizes and parses the command line flags
+func initFlags() {
+	pflag.CommandLine.SetNormalizeFunc(wordSepNormalizeFunc)
+	// Only glog flags will be added
+	flag.CommandLine.VisitAll(func(goflag *flag.Flag) {
+		switch goflag.Name {
+		case "logtostderr", "alsologtostderr",
+			"v", "stderrthreshold", "vmodule", "log_backtrace_at", "log_dir":
+			pflag.CommandLine.AddGoFlag(goflag)
+		}
+	})
+
+	pflag.Parse()
 }

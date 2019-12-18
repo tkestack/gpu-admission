@@ -19,9 +19,9 @@ package algorithm
 import (
 	"sort"
 
-	"tkestack.io/gpu-admission/pkg/device"
+	"k8s.io/klog"
 
-	"github.com/golang/glog"
+	"tkestack.io/gpu-admission/pkg/device"
 )
 
 type shareMode struct {
@@ -55,7 +55,7 @@ func (al *shareMode) Evaluate(cores uint, memory uint) []*device.DeviceInfo {
 
 	for _, dev := range tmpStore {
 		if dev.AllocatableCores() >= cores && dev.AllocatableMemory() >= memory {
-			glog.V(4).Infof("Pick up %d , cores: %d, memory: %d",
+			klog.V(4).Infof("Pick up %d , cores: %d, memory: %d",
 				dev.GetID(), dev.AllocatableCores(), dev.AllocatableMemory())
 			devs = append(devs, dev)
 			break

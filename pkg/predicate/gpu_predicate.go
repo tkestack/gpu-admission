@@ -23,11 +23,6 @@ import (
 	"sync"
 	"time"
 
-	"tkestack.io/gpu-admission/pkg/algorithm"
-	"tkestack.io/gpu-admission/pkg/device"
-	"tkestack.io/gpu-admission/pkg/util"
-
-	"github.com/golang/glog"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -37,7 +32,12 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	listerv1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/klog"
 	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
+
+	"tkestack.io/gpu-admission/pkg/algorithm"
+	"tkestack.io/gpu-admission/pkg/device"
+	"tkestack.io/gpu-admission/pkg/util"
 )
 
 type GPUFilter struct {
@@ -128,7 +128,7 @@ func NewGPUFilter(configFile string, client kubernetes.Interface) (*GPUFilter, e
 	if gpuFilterConfig.SkipBindTime == 0 {
 		gpuFilterConfig.SkipBindTime = DefaultSkipBindTime
 	}
-	glog.Infof("SkipBindTime is %v", gpuFilterConfig.SkipBindTime)
+	klog.Infof("SkipBindTime is %v", gpuFilterConfig.SkipBindTime)
 	return newGPUFilter(gpuFilterConfig, client)
 }
 
@@ -174,20 +174,20 @@ func (gpuFilter *GPUFilter) syncQuota() {
 	configData, err := gpuFilter.getConfigData()
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
-			glog.V(4).Infof("GPU quota is not set")
+			klog.V(4).Infof("GPU quota is not set")
 			gpuFilter.setQuota(nil, "none")
 		} else {
-			glog.Errorf("Failed to read config map(%s/%s) fro GPUFilter: %s",
+			klog.Errorf("Failed to read config map(%s/%s) fro GPUFilter: %s",
 				gpuFilter.conf.QuotaConfigMapNamespace, gpuFilter.conf.QuotaConfigMapName, err)
 		}
 		return
 	}
 	if configData.ResourceVersion == gpuFilter.quotaLastSyncedRevision {
-		glog.V(4).Infof("Same resource version, no need to sync GPU quota")
+		klog.V(4).Infof("Same resource version, no need to sync GPU quota")
 		return
 	}
 	if quota, err := parseQuota(configData.Data); err != nil {
-		glog.Errorf("Failed to parse quota: %s", err)
+		klog.Errorf("Failed to parse quota: %s", err)
 	} else {
 		gpuFilter.setQuota(quota, configData.ResourceVersion)
 	}
@@ -206,7 +206,7 @@ func parseQuota(configData map[string]string) (quota map[string]NamespaceQuota, 
 	}
 	quota = make(map[string]NamespaceQuota)
 	if err := json.Unmarshal([]byte(quotaData), &quota); err != nil {
-		glog.Errorf("Failed to parse GPU quota config : %s", err)
+		klog.Errorf("Failed to parse GPU quota config : %s", err)
 		return nil, err
 	}
 	return quota, nil
@@ -231,7 +231,7 @@ func (gpuFilter *GPUFilter) Filter(
 	}
 	// Quota has not been synced.
 	if len(gpuFilter.quotaLastSyncedRevision) == 0 {
-		glog.V(1).Info("GPU quota has not been synced, please retry later")
+		klog.V(1).Info("GPU quota has not been synced, please retry later")
 		return &schedulerapi.ExtenderFilterResult{
 			Error: "GPU quota has not been synced, please retry later",
 		}
@@ -350,11 +350,11 @@ func (gpuFilter *GPUFilter) quotaFilter(
 ) (filteredNodes []corev1.Node, failedNodesMap schedulerapi.FailedNodesMap, err error) {
 	quota, exists := gpuFilter.getQuotaForNamespace(pod.Namespace)
 	if !exists {
-		glog.V(4).Infof("No GPU quota limit for %s", pod.Namespace)
+		klog.V(4).Infof("No GPU quota limit for %s", pod.Namespace)
 		return nodes, nil, nil
 	}
 	if gpuModels, err := gpuFilter.filterGPUModel(pod, quota); err != nil {
-		glog.Errorf("Failed to filer GPU models for pod %s: %s", pod.Name, err)
+		klog.Errorf("Failed to filer GPU models for pod %s: %s", pod.Name, err)
 		return nil, nil, err
 	} else {
 		return gpuFilter.filterNodes(nodes, gpuModels, quota.Pool)
@@ -366,7 +366,7 @@ func (gpuFilter *GPUFilter) setQuota(quota map[string]NamespaceQuota, resourceVe
 	defer gpuFilter.Unlock()
 	gpuFilter.quota = quota
 	gpuFilter.quotaLastSyncedRevision = resourceVersion
-	glog.V(4).Infof("Update quota %+v with resource version %s successfully",
+	klog.V(4).Infof("Update quota %+v with resource version %s successfully",
 		quota, resourceVersion)
 }
 
@@ -376,7 +376,7 @@ func (gpuFilter *GPUFilter) getQuotaForNamespace(
 	gpuFilter.Lock()
 	defer gpuFilter.Unlock()
 	quota, exists = gpuFilter.quota[namespace]
-	glog.V(4).Infof("Quota for namespace %s is %+v", namespace, quota)
+	klog.V(4).Infof("Quota for namespace %s is %+v", namespace, quota)
 	return
 }
 
@@ -399,11 +399,11 @@ func (gpuFilter *GPUFilter) filterGPUModel(
 		if gpuUsed <= limit {
 			filteredGPUModels = append(filteredGPUModels, gpuModel)
 		}
-		glog.V(4).Infof(
+		klog.V(4).Infof(
 			"Pods in namespace %s will use %d %s GPU cards after adding this pod, quota is %d",
 			pod.Namespace, gpuUsed, gpuModel, limit)
 	}
-	glog.V(4).Infof("These GPU models could be used by pod %s: %+v", pod.Name, filteredGPUModels)
+	klog.V(4).Infof("These GPU models could be used by pod %s: %+v", pod.Name, filteredGPUModels)
 	return filteredGPUModels, nil
 }
 
@@ -425,7 +425,7 @@ func (gpuFilter *GPUFilter) listPodsOnNodes(
 
 	var ret []*corev1.Pod
 	for _, pod := range pods {
-		glog.V(9).Infof("List pod %s/%s in namespace %s", pod.Namespace, pod.Name, podNameSpace)
+		klog.V(9).Infof("List pod %s/%s in namespace %s", pod.Namespace, pod.Name, podNameSpace)
 		if _, exist := records[pod.Spec.NodeName]; exist {
 			ret = append(ret, pod)
 		}
@@ -442,7 +442,7 @@ func (gpuFilter *GPUFilter) ListPodsOnNode(node *corev1.Node) ([]*corev1.Pod, er
 
 	var ret []*corev1.Pod
 	for _, pod := range pods {
-		glog.V(9).Infof("List pod %s", pod.Name)
+		klog.V(9).Infof("List pod %s", pod.Name)
 		var predicateNode string
 		if pod.Spec.NodeName == "" && pod.Annotations != nil {
 			if v, ok := pod.Annotations[util.PredicateNode]; ok {
@@ -453,7 +453,7 @@ func (gpuFilter *GPUFilter) ListPodsOnNode(node *corev1.Node) ([]*corev1.Pod, er
 			pod.Status.Phase != corev1.PodSucceeded &&
 			pod.Status.Phase != corev1.PodFailed {
 			ret = append(ret, pod)
-			glog.V(9).Infof("get pod %s on node %s", pod.UID, node.Name)
+			klog.V(9).Infof("get pod %s on node %s", pod.UID, node.Name)
 		}
 	}
 	return ret, nil
@@ -490,7 +490,7 @@ func (gpuFilter *GPUFilter) patchPodWithAnnotations(
 	if err != nil {
 		msg := fmt.Sprintf("failed to add annotation %v to pod %s due to %s",
 			annotationMap, pod.UID, err.Error())
-		glog.Infof(msg)
+		klog.Infof(msg)
 		return fmt.Errorf(msg)
 	}
 	return nil
@@ -524,7 +524,7 @@ func (gpuFilter *GPUFilter) filterNodes(
 	err error) {
 	var gpuModelSelector, poolSelector labels.Selector
 
-	glog.V(4).Infof("Filter nodes with gpuModels(%+v) and pools(%+v)", gpuModels, pools)
+	klog.V(4).Infof("Filter nodes with gpuModels(%+v) and pools(%+v)", gpuModels, pools)
 
 	if len(gpuModels) != 0 {
 		gpuModelSelector, err = metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
@@ -561,10 +561,10 @@ func (gpuFilter *GPUFilter) filterNodes(
 		if gpuModelSelector.Matches(labels.Set(node.Labels)) &&
 			poolSelector.Matches(labels.Set(node.Labels)) {
 			filteredNodes = append(filteredNodes, node)
-			glog.V(5).Infof("Add %s to filteredNodes", node.Name)
+			klog.V(5).Infof("Add %s to filteredNodes", node.Name)
 		} else {
 			failedNodesMap[node.Name] = "ExceedsGPUQuota"
-			glog.V(5).Infof("Add %s to failedNodesMap", node.Name)
+			klog.V(5).Infof("Add %s to failedNodesMap", node.Name)
 		}
 	}
 	return filteredNodes, failedNodesMap, nil

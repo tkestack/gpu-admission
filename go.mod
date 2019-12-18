@@ -27,7 +27,6 @@ replace (
 
 require (
 	github.com/gogo/protobuf v1.1.1 // indirect
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/json-iterator/go v1.1.7 // indirect
 	github.com/julienschmidt/httprouter v1.3.1-0.20191005171706-08a3b3d20bbe

@@ -23,9 +23,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
 	apierr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/klog"
 )
 
 const (
@@ -50,14 +50,14 @@ func ParseConifg(path string, data interface{}) (err error) {
 
 // IsGPURequiredPod tell if the pod is a GPU request pod
 func IsGPURequiredPod(pod *v1.Pod) bool {
-	glog.V(4).Infof("Determine if the pod %s needs GPU resource", pod.Name)
+	klog.V(4).Infof("Determine if the pod %s needs GPU resource", pod.Name)
 
 	vcore := GetGPUResourceOfPod(pod, VCoreAnnotation)
 	vmemory := GetGPUResourceOfPod(pod, VMemoryAnnotation)
 
 	// Check if pod request for GPU resource
 	if vcore <= 0 || (vcore < HundredCore && vmemory <= 0) {
-		glog.V(4).Infof("Pod %s in namespace %s does not Request for GPU resource",
+		klog.V(4).Infof("Pod %s in namespace %s does not Request for GPU resource",
 			pod.Name,
 			pod.Namespace)
 		return false
@@ -68,14 +68,14 @@ func IsGPURequiredPod(pod *v1.Pod) bool {
 
 // IsGPURequiredContainer tell if the container is a GPU request container
 func IsGPURequiredContainer(c *v1.Container) bool {
-	glog.V(4).Infof("Determine if the container %s needs GPU resource", c.Name)
+	klog.V(4).Infof("Determine if the container %s needs GPU resource", c.Name)
 
 	vcore := GetGPUResourceOfContainer(c, VCoreAnnotation)
 	vmemory := GetGPUResourceOfContainer(c, VMemoryAnnotation)
 
 	// Check if container request for GPU resource
 	if vcore <= 0 || (vcore < HundredCore && vmemory <= 0) {
-		glog.V(4).Infof("Container %s does not Request for GPU resource", c.Name)
+		klog.V(4).Infof("Container %s does not Request for GPU resource", c.Name)
 		return false
 	}
 

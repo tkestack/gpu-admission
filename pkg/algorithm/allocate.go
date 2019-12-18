@@ -22,11 +22,11 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/api/core/v1"
+	"k8s.io/klog"
+
 	"tkestack.io/gpu-admission/pkg/device"
 	"tkestack.io/gpu-admission/pkg/util"
-
-	"github.com/golang/glog"
-	"k8s.io/api/core/v1"
 )
 
 type allocator struct {
@@ -46,7 +46,7 @@ func (alloc *allocator) IsAllocatable(pod *v1.Pod) bool {
 		}
 		_, err := alloc.AllocateOne(&c)
 		if err != nil {
-			glog.Infof("failed to allocate for pod %s container %s", pod.UID, c.Name)
+			klog.Infof("failed to allocate for pod %s container %s", pod.UID, c.Name)
 			allocatable = false
 			break
 		}
@@ -68,7 +68,7 @@ func (alloc *allocator) Allocate(pod *v1.Pod) (*v1.Pod, error) {
 		devIDs := []string{}
 		devs, err := alloc.AllocateOne(&c)
 		if err != nil {
-			glog.Infof("failed to allocate for pod %s(%s)", newPod.Name, c.Name)
+			klog.Infof("failed to allocate for pod %s(%s)", newPod.Name, c.Name)
 			return nil, err
 		}
 		for _, dev := range devs {
@@ -122,7 +122,7 @@ func (alloc *allocator) AllocateOne(container *v1.Container) ([]*device.DeviceIn
 	for _, dev := range devs {
 		err := alloc.nodeInfo.AddUsedResources(dev.GetID(), vcore, vmemory)
 		if err != nil {
-			glog.Infof("failed to update used resource for node %s dev %d due to %v",
+			klog.Infof("failed to update used resource for node %s dev %d due to %v",
 				node.Name, dev.GetID(), err)
 			return nil, err
 		}
