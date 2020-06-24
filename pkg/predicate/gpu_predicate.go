@@ -287,7 +287,7 @@ func (gpuFilter *GPUFilter) deviceFilter(
 		if strings.Contains(k, util.GPUAssigned) ||
 			strings.Contains(k, util.PredicateTimeAnnotation) ||
 			strings.Contains(k, util.PredicateGPUIndexPrefix) {
-			return filteredNodes, failedNodesMap, nil
+			return filteredNodes, failedNodesMap, fmt.Errorf("pod %s had been predicated!", pod.Name)
 		}
 	}
 
