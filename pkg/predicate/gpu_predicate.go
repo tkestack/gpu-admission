@@ -104,8 +104,8 @@ const (
 	NAME = "GPUQuotaPredicate"
 
 	NamespaceField = "metadata.namespace"
-	NameFiled      = "metadata.name"
-	PodPhaseFiled  = "status.phase"
+	NameField      = "metadata.name"
+	PodPhaseField  = "status.phase"
 
 	DefaultSkipBindTime = 300 * time.Microsecond
 	waitTimeout         = 10 * time.Second
@@ -138,7 +138,7 @@ func newGPUFilter(
 	configMapListOptions := func(options *metav1.ListOptions) {
 		options.FieldSelector = fields.SelectorFromSet(map[string]string{
 			NamespaceField: gpuFilterConfig.QuotaConfigMapNamespace,
-			NameFiled:      gpuFilterConfig.QuotaConfigMapName}).String()
+			NameField:      gpuFilterConfig.QuotaConfigMapName}).String()
 	}
 	configMapInformerFactory := kubeinformers.
 		NewSharedInformerFactoryWithOptions(client, time.Second*30,
@@ -148,7 +148,7 @@ func newGPUFilter(
 	nodeInformerFactory := kubeinformers.NewSharedInformerFactory(client, time.Second*30)
 
 	podListOptions := func(options *metav1.ListOptions) {
-		options.FieldSelector = fmt.Sprintf("%s!=%s", PodPhaseFiled, corev1.PodSucceeded)
+		options.FieldSelector = fmt.Sprintf("%s!=%s", PodPhaseField, corev1.PodSucceeded)
 	}
 	podInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(client,
 		time.Second*30, kubeinformers.WithNamespace(metav1.NamespaceAll),
