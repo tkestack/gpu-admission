@@ -112,7 +112,7 @@ const (
 )
 
 func NewGPUFilter(configFile string, client kubernetes.Interface) (*GPUFilter, error) {
-	var gpuFilterConfig *GPUFilterConfig
+	var gpuFilterConfig GPUFilterConfig
 	if err := util.ParseConifg(configFile, &gpuFilterConfig); err != nil {
 		return nil, fmt.Errorf("invalid GPUFilter config in file %s", configFile)
 	}
@@ -129,7 +129,7 @@ func NewGPUFilter(configFile string, client kubernetes.Interface) (*GPUFilter, e
 		gpuFilterConfig.SkipBindTime = DefaultSkipBindTime
 	}
 	klog.Infof("SkipBindTime is %v", gpuFilterConfig.SkipBindTime)
-	return newGPUFilter(gpuFilterConfig, client)
+	return newGPUFilter(&gpuFilterConfig, client)
 }
 
 func newGPUFilter(
