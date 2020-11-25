@@ -32,7 +32,6 @@ import (
 	"k8s.io/klog"
 
 	"tkestack.io/gpu-admission/pkg/predicate"
-	"tkestack.io/gpu-admission/pkg/prioritize"
 	"tkestack.io/gpu-admission/pkg/route"
 	"tkestack.io/gpu-admission/pkg/version/verflag"
 )
@@ -40,10 +39,8 @@ import (
 var (
 	kubeconfig     string
 	masterURL      string
-	configFile     string
 	listenAddress  string
 	profileAddress string
-	inClusterMode  bool
 )
 
 func main() {
@@ -63,12 +60,7 @@ func main() {
 		err       error
 	)
 
-	if !inClusterMode {
-		clientCfg, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
-	} else {
-		clientCfg, err = rest.InClusterConfig()
-	}
-
+	clientCfg, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
@@ -78,13 +70,11 @@ func main() {
 		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	gpuFilter, err := predicate.NewGPUFilter(configFile, kubeClient)
+	gpuFilter, err := predicate.NewGPUFilter(kubeClient)
 	if err != nil {
 		klog.Fatalf("Failed to new gpu quota filter: %s", err.Error())
 	}
 	route.AddPredicate(router, gpuFilter)
-
-	route.AddPrioritize(router, &prioritize.CPUNodeFirst{})
 
 	go func() {
 		log.Println(http.ListenAndServe(profileAddress, nil))
@@ -101,11 +91,8 @@ func addFlags(fs *pflag.FlagSet) {
 		"Path to a kubeconfig. Only required if out-of-cluster.")
 	fs.StringVar(&masterURL, "master", "",
 		"The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	fs.StringVar(&configFile, "config", "", "The config path for gpu-admission.")
 	fs.StringVar(&listenAddress, "address", "127.0.0.1:3456", "The address it will listen")
 	fs.StringVar(&profileAddress, "pprofAddress", "127.0.0.1:3457", "The address for debug")
-	fs.BoolVar(&inClusterMode, "incluster-mode", false,
-		"Tell controller kubeconfig is built from in cluster")
 }
 
 func wordSepNormalizeFunc(f *pflag.FlagSet, name string) pflag.NormalizedName {

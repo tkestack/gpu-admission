@@ -1,26 +1,32 @@
 {
-"kind" : "Policy",
-"apiVersion" : "v1",
-"predicates" : [
-	{"name" : "PodFitsHostPorts"},
-	{"name" : "PodFitsResources"},
-	{"name" : "NoDiskConflict"},
-	{"name" : "MatchNodeSelector"},
-	{"name" : "HostName"}
-	],
-"priorities" : [
-	{"name" : "BalancedResourceAllocation", "weight" : 1},
-	{"name" : "ServiceSpreadingPriority", "weight" : 1}
-	],
-"extenders" : [
-  	{
-          "urlPrefix": "http://127.0.0.1:3456/scheduler",
-          "apiVersion": "v1beta1",
-          "filterVerb": "predicates",
-          "enableHttps": false,
-          "nodeCacheCapable": false
-  	}
-    ],
-"hardPodAffinitySymmetricWeight" : 10,
-"alwaysCheckAllPredicates" : false
+  "kind": "Policy",
+  "apiVersion": "v1",
+  "predicates": [
+    {
+      "name": "PodFitsHostPorts"
+    },
+    {
+      "name": "PodFitsResources"
+    },
+    {
+      "name": "NoDiskConflict"
+    },
+    {
+      "name": "MatchNodeSelector"
+    },
+    {
+      "name": "HostName"
+    }
+  ],
+  "extenders": [
+    {
+      "urlPrefix": "http://127.0.0.1:3456/scheduler",
+      "apiVersion": "v1beta1",
+      "filterVerb": "predicates",
+      "enableHttps": false,
+      "nodeCacheCapable": false
+    }
+  ],
+  "hardPodAffinitySymmetricWeight": 10,
+  "alwaysCheckAllPredicates": false
 }

@@ -17,7 +17,7 @@
 package predicate
 
 import (
-	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
+	extenderv1 "k8s.io/kube-scheduler/extender/v1"
 )
 
 type Predicate interface {
@@ -25,5 +25,5 @@ type Predicate interface {
 	Name() string
 	// Filter returns the filter result of predictor, this will tell the suitable nodes to running
 	// pod
-	Filter(args schedulerapi.ExtenderArgs) *schedulerapi.ExtenderFilterResult
+	Filter(args extenderv1.ExtenderArgs) *extenderv1.ExtenderFilterResult
 }

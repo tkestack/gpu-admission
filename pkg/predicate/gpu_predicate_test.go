@@ -17,6 +17,7 @@
 package predicate
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -44,7 +45,6 @@ type containerRawInfo struct {
 }
 
 const (
-	configFile  = "../../build/gpu-admission.config"
 	deviceCount = 2
 	totalMemory = 8
 	namespace   = "test-ns"
@@ -52,7 +52,7 @@ const (
 
 func TestDeviceFilter(t *testing.T) {
 	k8sClient := fake.NewSimpleClientset()
-	gpuFilter, err := NewGPUFilter(configFile, k8sClient)
+	gpuFilter, err := NewGPUFilter(k8sClient)
 	if err != nil {
 		t.Fatalf("failed to create new gpuFilter due to %v", err)
 	}
@@ -179,7 +179,7 @@ func TestDeviceFilter(t *testing.T) {
 				Phase: corev1.PodPending,
 			},
 		}
-		pod, _ = k8sClient.CoreV1().Pods(namespace).Create(pod)
+		pod, _ = k8sClient.CoreV1().Pods(namespace).Create(context.Background(), pod, metav1.CreateOptions{})
 
 		// wait for podLister to sync
 		time.Sleep(time.Second * 2)
@@ -199,10 +199,10 @@ func TestDeviceFilter(t *testing.T) {
 		time.Sleep(time.Second * 2)
 
 		// get the latest pod and bind it to the node
-		pod, _ = k8sClient.CoreV1().Pods(namespace).Get(pod.Name, metav1.GetOptions{})
+		pod, _ = k8sClient.CoreV1().Pods(namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
 		pod.Spec.NodeName = nodes[0].Name
 		pod.Status.Phase = corev1.PodRunning
-		pod, _ = k8sClient.CoreV1().Pods("test-ns").Update(pod)
+		pod, _ = k8sClient.CoreV1().Pods("test-ns").Update(context.Background(), pod, metav1.UpdateOptions{})
 	}
 
 }

@@ -37,7 +37,4 @@ RUN rpm -ivh /tmp/gpu-admission-${version}-${commit}.el7.x86_64.rpm
 
 EXPOSE 3456
 
-VOLUME ["/var/log/gpu-admission"]
-VOLUME ["/etc/kubernetes"]
-
-CMD ["/bin/bash", "-c", "/usr/bin/gpu-admission --kubeconfig=/etc/kubernetes/kube-scheduler/kubeconfig --config=/etc/kubernetes/gpu-admission.config --address=0.0.0.0:3456 --v=$LOG_LEVEL --logtostderr=false --log-dir=/var/log/gpu-admission $EXTRA_FLAGS"]
+CMD ["/bin/bash", "-c", "/usr/bin/gpu-admission --address=0.0.0.0:3456 --v=$LOG_LEVEL --logtostderr=true $EXTRA_FLAGS"]

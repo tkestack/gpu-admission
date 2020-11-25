@@ -17,9 +17,7 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -37,16 +35,6 @@ const (
 	GPUAssigned             = "tencent.com/gpu-assigned"
 	HundredCore             = 100
 )
-
-func ParseConifg(path string, data interface{}) (err error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("failed to open config file %s: %v", path, err)
-	}
-	defer file.Close()
-
-	return json.NewDecoder(file).Decode(data)
-}
 
 // IsGPURequiredPod tell if the pod is a GPU request pod
 func IsGPURequiredPod(pod *v1.Pod) bool {
@@ -111,17 +99,6 @@ func IsGPUEnabledNode(node *v1.Node) bool {
 // Get the capacity of request resource of the Node
 func GetCapacityOfNode(node *v1.Node, resourceName string) int {
 	val, ok := node.Status.Capacity[v1.ResourceName(resourceName)]
-
-	if !ok {
-		return 0
-	}
-
-	return int(val.Value())
-}
-
-// Get the Allocatable of request resource of the Node
-func GetAllocatableOfNode(node *v1.Node, resourceName string) int {
-	val, ok := node.Status.Allocatable[v1.ResourceName(resourceName)]
 
 	if !ok {
 		return 0

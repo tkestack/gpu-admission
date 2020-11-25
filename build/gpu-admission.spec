@@ -1,9 +1,9 @@
 Name: gpu-admission
 Version: %{version}
 Release: %{commit}%{?dist}
-Summary: GPU quota admission
+Summary: GPU admission
 
-Group: Development/GAIA
+Group: Development/TKE
 License: MIT
 Source: gpu-admission-source.tar.gz
 
@@ -30,7 +30,6 @@ install -d $RPM_BUILD_ROOT/etc/kubernetes
 
 install -p -m 755 ./bin/gpu-admission $RPM_BUILD_ROOT/%{_bindir}/gpu-admission
 install -p -m 644 ./build/gpu-admission.conf $RPM_BUILD_ROOT/etc/kubernetes/gpu-admission.conf
-install -p -m 644 ./build/gpu-admission.config $RPM_BUILD_ROOT/etc/kubernetes/gpu-admission.config
 install -p -m 644 ./build/gpu-admission.service $RPM_BUILD_ROOT/%{_unitdir}/
 
 %clean
@@ -38,7 +37,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %config(noreplace,missingok) /etc/kubernetes/gpu-admission.conf
-%config(noreplace,missingok) /etc/kubernetes/gpu-admission.config
 
 /%{_unitdir}/gpu-admission.service
 

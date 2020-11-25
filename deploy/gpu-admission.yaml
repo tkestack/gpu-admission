@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
+  name: gpu-admission
+  namespace: kube-system
+spec:
+  containers:
+    - image: gpu-admission-tke:36
+      imagePullPolicy: Always
+      name: gpu-admission
+      env:
+        - name: LOG_LEVEL
+          value: "4"
+      ports:
+        - containerPort: 3456
+  dnsPolicy: ClusterFirstWithHostNet
+  hostNetwork: true
+  priority: 2000000000
+  priorityClassName: system-cluster-critical

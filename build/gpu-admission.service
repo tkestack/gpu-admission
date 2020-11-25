@@ -7,7 +7,6 @@ EnvironmentFile=-/etc/kubernetes/gpu-admission.conf
 ExecStart=/usr/bin/gpu-admission\
 ${KUBE_MASTER}         \
 ${KUBE_CONFIG}         \
-${GPU_QUOTA_ADMISSION_CONFIG_FILE} \
 ${GPU_QUOTA_ADMISSION_ADDRESS} \
 ${GPU_QUOTA_ADMISSION_LOG_LEVEL}    \
 ${GPU_QUOTA_ADMISSION_LOGTOSTDER}   \

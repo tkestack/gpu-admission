@@ -25,10 +25,9 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"k8s.io/klog"
-	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
+	extenderv1 "k8s.io/kube-scheduler/extender/v1"
 
 	"tkestack.io/gpu-admission/pkg/predicate"
-	"tkestack.io/gpu-admission/pkg/prioritize"
 	"tkestack.io/gpu-admission/pkg/version"
 )
 
@@ -38,8 +37,6 @@ const (
 	apiPrefix   = "/scheduler"
 	// predication router path
 	predicatesPrefix = apiPrefix + "/predicates"
-	// prioritize router path
-	prioritiesPrefix = apiPrefix + "/priorities"
 )
 
 func checkBody(w http.ResponseWriter, r *http.Request) {
@@ -57,11 +54,11 @@ func PredicateRoute(predicate predicate.Predicate) httprouter.Handle {
 		var buf bytes.Buffer
 		body := io.TeeReader(r.Body, &buf)
 
-		var extenderArgs schedulerapi.ExtenderArgs
-		var extenderFilterResult *schedulerapi.ExtenderFilterResult
+		var extenderArgs extenderv1.ExtenderArgs
+		var extenderFilterResult *extenderv1.ExtenderFilterResult
 
 		if err := json.NewDecoder(body).Decode(&extenderArgs); err != nil {
-			extenderFilterResult = &schedulerapi.ExtenderFilterResult{
+			extenderFilterResult = &extenderv1.ExtenderFilterResult{
 				Nodes:       nil,
 				FailedNodes: nil,
 				Error:       err.Error(),
@@ -80,49 +77,6 @@ func PredicateRoute(predicate predicate.Predicate) httprouter.Handle {
 		} else {
 			klog.V(4).Infof("%s: extenderFilterResult = %s",
 				predicate.Name(), string(resultBody))
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write(resultBody)
-		}
-	}
-}
-
-// PrioritizeRoute sets the router table for prioritization
-func PrioritizeRoute(prioritize prioritize.Prioritize) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		checkBody(w, r)
-
-		var buf bytes.Buffer
-		body := io.TeeReader(r.Body, &buf)
-
-		var extenderArgs schedulerapi.ExtenderArgs
-		var hostPriorityList *schedulerapi.HostPriorityList
-
-		if err := json.NewDecoder(body).Decode(&extenderArgs); err != nil {
-			klog.Errorf("Bad request for prioritize, body: %v", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		hostPriorityList, err := prioritize.Handler(extenderArgs)
-		if err != nil {
-			klog.Errorf("Failed to prioritize %+v: %v", extenderArgs, err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		klog.V(4).Infof("%s: ExtenderArgs = %+v, priorize result: %+v",
-			prioritize.Name(), extenderArgs, hostPriorityList)
-
-		if resultBody, err := json.Marshal(hostPriorityList); err != nil {
-			klog.Errorf("Failed to marshal hostPriorityList: %+v, %+v", err, hostPriorityList)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-		} else {
-			klog.V(4).Infof("%s: hostPriorityList = %s", prioritize.Name(), string(resultBody))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(resultBody)
@@ -151,9 +105,4 @@ func DebugLogging(h httprouter.Handle, path string) httprouter.Handle {
 func AddPredicate(router *httprouter.Router, predicate predicate.Predicate) {
 	path := predicatesPrefix
 	router.POST(path, DebugLogging(PredicateRoute(predicate), path))
-}
-
-func AddPrioritize(router *httprouter.Router, prioritize prioritize.Prioritize) {
-	path := prioritiesPrefix
-	router.POST(path, DebugLogging(PrioritizeRoute(prioritize), path))
 }
