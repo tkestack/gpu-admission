@@ -61,7 +61,7 @@ var (
 			result = d1.GetID() < d2.GetID()
 		case *NodeInfo:
 			n1 := p1.(*NodeInfo)
-			n2 := p1.(*NodeInfo)
+			n2 := p2.(*NodeInfo)
 			result = n1.GetName() < n2.GetName()
 		}
 		return result
