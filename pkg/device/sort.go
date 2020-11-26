@@ -30,7 +30,7 @@ var (
 			result = d1.AllocatableCores() < d2.AllocatableCores()
 		case *NodeInfo:
 			n1 := p1.(*NodeInfo)
-			n2 := p1.(*NodeInfo)
+			n2 := p2.(*NodeInfo)
 			result = n1.GetAvailableCore() < n2.GetAvailableCore()
 		}
 		return result
@@ -46,7 +46,7 @@ var (
 			result = d1.AllocatableMemory() < d2.AllocatableMemory()
 		case *NodeInfo:
 			n1 := p1.(*NodeInfo)
-			n2 := p1.(*NodeInfo)
+			n2 := p2.(*NodeInfo)
 			result = n1.GetAvailableMemory() < n2.GetAvailableMemory()
 		}
 		return result
@@ -61,7 +61,7 @@ var (
 			result = d1.GetID() < d2.GetID()
 		case *NodeInfo:
 			n1 := p1.(*NodeInfo)
-			n2 := p1.(*NodeInfo)
+			n2 := p2.(*NodeInfo)
 			result = n1.GetName() < n2.GetName()
 		}
 		return result
